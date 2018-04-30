@@ -1,0 +1,77 @@
+genplot reset -silent @echo off
+lt 0 pen -1 lw 2
+
+
+region auto
+label bot "Wavenumber [cm^{-1}]"
+label left "Absorbance [AU]"
+
+/* ===========================================
+/* Read the data if not already done
+/* ===========================================
+read Data.csv -silent
+archive c01
+
+/* Series of gaussian
+define g1(x) = a1*gaussn(x,c1,dx1)   setv a1,c1,dx1 = 0.14    1035   28
+define g2(x) = a2*gaussn(x,c2,dx2)   setv a2,c2,dx2 = 0.05    1065   14
+define g3(x) = a3*gaussn(x,c3,dx3)   setv a3,c3,dx3 = 0.12    1105   16
+define g4(x) = a4*gaussn(x,c4,dx4)   setv a4,c4,dx4 = 0.045   1140   40
+define g5(x) = a5*gaussn(x,c5,dx5)   setv a5,c5,dx5 = 0.018   1277   15
+
+/* Exact values from fit of samples 1.txt
+let a1,c1,dx1 0.11    1035   27
+let a2,c2,dx2 0.05    1065   15
+let a3,c3,dx3 0.094   1105   16.7
+let a4,c4,dx4 0.049   1151   41
+let a5,c5,dx5 0.013   1273   25
+
+
+
+/* Full function for fitting
+define g(x) =g1(x)+g2(x)+g3(x)+g4(x)+g5(x)
+force yes
+region bottom 900 1400
+reg left 0 0.18
+axctrl 
+left -dx 0.02
+plot -sym FilledSquare overlay -f g(x) -range $xmin $xmax -points 500 -lt 1
+title "This is the initial guess ... should be reasonable ..."
+sleep 5
+
+/* Now, try to refine to better fit
+nlsfit
+   equation g(x)
+   range 900 1400
+   vary a1 / -limit 0.001 0.125
+   vary a2 / -limit 0.001 0.15
+   vary a3 / -limit 0.085 0.15
+   vary a4 / -limit 0.001 0.05
+   vary a5 / -limit 0.001 0.15
+   vary c1 / -limit 1035 1035 
+   vary c2 / -limit 1065 1065
+   vary c3 / -limit 1105 1105
+   vary c4 / -limit 1151 1151
+   vary c5 / -limit 1278 1278
+   vary dx1 / -limit 0 40
+   vary dx2 / -limit 0 40
+   vary dx3 / -limit 0 40
+   vary dx4 / -limit 0 43
+   vary dx5 / -limit 0 40
+   maxiter 100
+   fit
+   return
+
+/* Show the summary
+vecsize 0.001 /* Make very small dashed lines
+plot -sym FilledSquare
+ov -f g(x) -range $xmin $xmax -lt 1 -pen 2
+ov -f g1(x) -lt 2 -pen 8
+ov -f g2(x) -lt 2 -pen 4
+ov -f g3(x) -lt 2 -pen 5
+ov -f g4(x) -lt 2 -pen 9
+ov -f g5(x) -lt 2 -pen 10
+
+
+
+
